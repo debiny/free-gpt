@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+from urllib.parse import quote_plus, urlparse
 
 
 def load_local_env() -> None:
@@ -31,36 +32,70 @@ def require_env(name: str) -> str:
     return value
 
 
-def get_database_url() -> str:
-    # Importante: "" no Render NÃO deve cair no default do .get()
-    raw = (os.environ.get("DATABASE_URL") or "sqlite:///./data/auth.db").strip()
-    url = raw.strip().strip('"').strip("'").strip("`")
-
-    # Se colaram o comando psql inteiro, extrai só a URL
+def _normalize_pg_url(url: str) -> str:
+    url = url.strip().strip('"').strip("'").strip("`")
     match = re.search(r"(postgres(?:ql)?(?:\+\w+)?://\S+)", url, flags=re.IGNORECASE)
     if match:
         url = match.group(1).rstrip("';'")
-
-    # Render/Heroku: postgres:// → postgresql://
     if url.startswith("postgres://"):
         url = "postgresql://" + url[len("postgres://") :]
-
-    # Driver explícito (psycopg2-binary)
     if url.startswith("postgresql://"):
         url = "postgresql+psycopg2://" + url[len("postgresql://") :]
-
-    if not (
-        url.startswith("sqlite:")
-        or url.startswith("postgresql+psycopg2://")
-        or url.startswith("postgresql://")
-    ):
-        preview = url[:32] if url else "(vazia)"
-        raise RuntimeError(
-            "DATABASE_URL inválida. Cole a Internal Database URL do Postgres no Render "
-            f"(começa com postgresql://). Valor recebido (início): {preview!r}"
-        )
-
     return url
+
+
+def _url_has_password(url: str) -> bool:
+    try:
+        # postgresql+psycopg2:// não é bem entendido pelo urlparse em todos os casos
+        parsed = urlparse(url.replace("postgresql+psycopg2://", "postgresql://", 1))
+        return bool(parsed.password)
+    except Exception:
+        return False
+
+
+def _url_from_pg_parts() -> str | None:
+    """Monta a URL a partir das variáveis PG* que o Render costuma expor."""
+    host = os.environ.get("PGHOST") or os.environ.get("DB_HOST")
+    user = os.environ.get("PGUSER") or os.environ.get("DB_USER")
+    password = os.environ.get("PGPASSWORD") or os.environ.get("DB_PASSWORD")
+    dbname = os.environ.get("PGDATABASE") or os.environ.get("DB_NAME")
+    port = os.environ.get("PGPORT") or os.environ.get("DB_PORT") or "5432"
+
+    if not all([host, user, password, dbname]):
+        return None
+
+    return (
+        f"postgresql+psycopg2://{quote_plus(user)}:{quote_plus(password)}"
+        f"@{host}:{port}/{dbname}"
+    )
+
+
+def get_database_url() -> str:
+    raw = (os.environ.get("DATABASE_URL") or "").strip()
+
+    if raw:
+        url = _normalize_pg_url(raw)
+        if url.startswith("sqlite:"):
+            return url
+        if url.startswith("postgresql+psycopg2://") and _url_has_password(url):
+            return url
+        # URL sem senha (ex.: só hostname ou user@host) — tenta montar pelas PG*
+        built = _url_from_pg_parts()
+        if built:
+            return built
+        if url.startswith("postgresql+psycopg2://"):
+            raise RuntimeError(
+                "DATABASE_URL está sem senha. No Postgres do Render, copie a "
+                "Internal Database URL completa (postgresql://user:SENHA@host/db), "
+                "ou preencha PGUSER, PGPASSWORD, PGHOST e PGDATABASE."
+            )
+
+    built = _url_from_pg_parts()
+    if built:
+        return built
+
+    # Dev local
+    return "sqlite:///./data/auth.db"
 
 
 OPENROUTER_API_KEY = require_env("OPENROUTER_API_KEY")
