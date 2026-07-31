@@ -1,11 +1,12 @@
 import hashlib
 import secrets
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import jwt
 
-JWT_SECRET = "change-me-in-production-uses-a-long-random-string"
+from config import JWT_SECRET
+
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 

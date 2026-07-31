@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.141.1",
     "httpx>=0.28.1",
     "passlib[bcrypt]>=1.7.4",
+    "psycopg2-binary>=2.9.9",
     "pydotenv>=0.0.7",
     "pyjwt>=2.13.0",
     "sqlalchemy>=2.0.51",

@@ -1,8 +1,11 @@
+import os
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import Column, String, DateTime, Boolean, create_engine
+from sqlalchemy import Boolean, Column, DateTime, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
+from config import DATABASE_URL
 
 
 class Base(DeclarativeBase):
@@ -20,15 +23,16 @@ class User(Base):
     active = Column(Boolean, default=True)
 
 
-def get_engine(path: str = "sqlite:///./data/auth.db"):
-    import os
-    os.makedirs(os.path.dirname(path.replace("sqlite:///", "")), exist_ok=True)
-    return create_engine(
-        path,
-        connect_args={"check_same_thread": False} if path.startswith("sqlite") else {},
-        echo=False,
-        future=True,
-    )
+def get_engine(url: str | None = None):
+    url = url or DATABASE_URL
+    connect_args = {}
+    if url.startswith("sqlite"):
+        db_path = url.replace("sqlite:///", "", 1)
+        parent = os.path.dirname(db_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        connect_args["check_same_thread"] = False
+    return create_engine(url, connect_args=connect_args, echo=False, future=True)
 
 
 def create_tables(engine=None):

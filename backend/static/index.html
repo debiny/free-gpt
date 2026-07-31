@@ -28,7 +28,7 @@
     --sidebar-w: 280px;
     --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --api-base: http://localhost:8000;
+    --api-base: '';
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -401,7 +401,7 @@
 
 <script>
 (() => {
-  const API_BASE = localStorage.getItem('lumina_api') || 'http://localhost:8000';
+  const API_BASE = localStorage.getItem('lumina_api') || '';
   const STORAGE_KEY = 'lumina_auth_v1';
   const CHAT_KEY = 'lumina_chats_v1';
 
