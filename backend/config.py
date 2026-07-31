@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 
@@ -31,13 +32,37 @@ def require_env(name: str) -> str:
 
 
 def get_database_url() -> str:
-    url = os.environ.get("DATABASE_URL", "sqlite:///./data/auth.db")
-    # Render/Heroku às vezes entregam postgres:// — SQLAlchemy exige postgresql://
+    # Importante: "" no Render NÃO deve cair no default do .get()
+    raw = (os.environ.get("DATABASE_URL") or "sqlite:///./data/auth.db").strip()
+    url = raw.strip().strip('"').strip("'").strip("`")
+
+    # Se colaram o comando psql inteiro, extrai só a URL
+    match = re.search(r"(postgres(?:ql)?(?:\+\w+)?://\S+)", url, flags=re.IGNORECASE)
+    if match:
+        url = match.group(1).rstrip("';'")
+
+    # Render/Heroku: postgres:// → postgresql://
     if url.startswith("postgres://"):
         url = "postgresql://" + url[len("postgres://") :]
+
+    # Driver explícito (psycopg2-binary)
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg2://" + url[len("postgresql://") :]
+
+    if not (
+        url.startswith("sqlite:")
+        or url.startswith("postgresql+psycopg2://")
+        or url.startswith("postgresql://")
+    ):
+        preview = url[:32] if url else "(vazia)"
+        raise RuntimeError(
+            "DATABASE_URL inválida. Cole a Internal Database URL do Postgres no Render "
+            f"(começa com postgresql://). Valor recebido (início): {preview!r}"
+        )
+
     return url
 
 
 OPENROUTER_API_KEY = require_env("OPENROUTER_API_KEY")
-JWT_SECRET = os.environ.get("JWT_SECRET", "dev-only-change-me-in-production")
+JWT_SECRET = os.environ.get("JWT_SECRET") or "dev-only-change-me-in-production"
 DATABASE_URL = get_database_url()

@@ -32,7 +32,14 @@ def get_engine(url: str | None = None):
         if parent:
             os.makedirs(parent, exist_ok=True)
         connect_args["check_same_thread"] = False
-    return create_engine(url, connect_args=connect_args, echo=False, future=True)
+    try:
+        return create_engine(url, connect_args=connect_args, echo=False, future=True)
+    except Exception as exc:
+        preview = (url or "")[:40]
+        raise RuntimeError(
+            f"Falha ao conectar no banco. Verifique DATABASE_URL no Render. "
+            f"Início do valor: {preview!r}. Erro original: {exc}"
+        ) from exc
 
 
 def create_tables(engine=None):
