@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, String, create_engine
@@ -19,27 +20,23 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     name = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     active = Column(Boolean, default=True)
 
 
 def get_engine(url: str | None = None):
     url = url or DATABASE_URL
     connect_args = {}
+
     if url.startswith("sqlite"):
+        # Garante a criação do diretório pai se for arquivo local (ex: ./data/app.db)
         db_path = url.replace("sqlite:///", "", 1)
         parent = os.path.dirname(db_path)
         if parent:
             os.makedirs(parent, exist_ok=True)
         connect_args["check_same_thread"] = False
-    try:
-        return create_engine(url, connect_args=connect_args, echo=False, future=True)
-    except Exception as exc:
-        preview = (url or "")[:40]
-        raise RuntimeError(
-            f"Falha ao conectar no banco. Verifique DATABASE_URL no Render. "
-            f"Início do valor: {preview!r}. Erro original: {exc}"
-        ) from exc
+
+    return create_engine(url, connect_args=connect_args, echo=False, future=True)
 
 
 def create_tables(engine=None):

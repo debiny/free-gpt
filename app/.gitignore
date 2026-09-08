@@ -3,7 +3,7 @@
 .venv/
 __pycache__/
 *.pyc
-backend/data/
+data/
 *.db
 .idea/
 .vscode/

@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina — Assistente de IA</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+<link href="assets/css2_2832c0ff631d.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';"/>
+<link href="assets/css2_2b2d87bc82d8.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap';"/>
+
+<!-- Lumina Stylesheets -->
+<link rel="stylesheet" href="assets/css/components.css"/>
+<link rel="stylesheet" href="assets/css/animations.css"/>
+<link rel="stylesheet" href="assets/css/utilities.css"/>
+
+<!-- Scripts -->
+<script src="assets/resource_3fa48481346f.js" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com';"></script>
+<script src="assets/lucide_latest_2eebd0ebe8c2.js" onerror="this.onerror=null;this.src='https://unpkg.com/lucide@latest';"></script>
+<script src="assets/js/tailwind-config.js"></script>
+
+<style>
+  :root {
+    --bg: #050505;
+    --bg-card: rgba(18, 18, 18, 0.7);
+    --border-subtle: rgba(255, 255, 255, 0.05);
+    --border-strong: rgba(255, 255, 255, 0.1);
+    --orange-primary: #f97316;
+    --orange-soft: #fb923c;
+    --orange-deep: #ea580c;
+    --amber-glow: #fbbf24;
+  }
+
+  * { box-sizing: border-box; }
+  
+  body {
+    background-color: #050505;
+    color: #ffffff;
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
+    user-select: none;
+  }
+
+  /* Custom Scrollbars */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(249, 115, 22, 0.3); }
+
+  /* Selection Color */
+  ::selection {
+    background-color: rgba(249, 115, 22, 0.3);
+    color: #ffffff;
+  }
+
+  .font-instrument-serif {
+    font-family: 'Instrument Serif', Georgia, serif !important;
+  }
+
+  /* Border Gradient Mask */
+  [style*="--border-gradient"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: var(--border-radius-before, inherit);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    background: var(--border-gradient);
+    pointer-events: none;
+  }
+
+  /* Keyframes */
+  @keyframes spinRing {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes messageSlide {
+    0% { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+  }
+
+  .animate-message {
+    animation: messageSlide 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  /* Markdown & Code Block Typography */
+  .chat-text {
+    user-select: text;
+    line-height: 1.7;
+    font-size: 0.94rem;
+  }
+  .chat-text p { margin-bottom: 0.75rem; }
+  .chat-text p:last-child { margin-bottom: 0; }
+  .chat-text code:not(pre code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85em;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: #fdba74;
+  }
+  .chat-text pre {
+    margin: 0.85rem 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #09090b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .code-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 6px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.75rem;
+    color: #a1a1aa;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+  }
+  .code-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: #a1a1aa;
+    cursor: pointer;
+    font-size: 0.72rem;
+    transition: color 0.2s ease;
+  }
+  .code-copy-btn:hover { color: #ffffff; }
+  .chat-text pre code {
+    display: block;
+    padding: 14px;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    color: #e4e4e7;
+  }
+  .chat-text ul { list-style-type: disc; margin-left: 1.4rem; margin-bottom: 0.75rem; }
+  .chat-text ol { list-style-type: decimal; margin-left: 1.4rem; margin-bottom: 0.75rem; }
+  .chat-text li { margin-bottom: 0.35rem; }
+  .chat-text strong { font-weight: 600; color: #ffffff; }
+  .chat-text blockquote {
+    border-left: 2px solid var(--orange-primary);
+    padding-left: 12px;
+    margin: 8px 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+  }
+
+  /* Conic border ring for composer */
+  .composer-container:focus-within .conic-focus-ring {
+    opacity: 1;
+  }
+  .conic-focus-ring {
+    position: absolute;
+    inset: -150%;
+    background: conic-gradient(from 0deg, transparent 0deg, transparent 60deg, rgba(249,115,22,0.8) 180deg, transparent 300deg, transparent 360deg);
+    animation: spinRing 4s linear infinite;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  /* Sidebar transition for mobile */
+  @media (max-width: 768px) {
+    #sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 50;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      width: 85vw;
+      max-width: 320px;
+    }
+    #sidebar.open {
+      transform: translateX(0);
+    }
+  }
+</style>
+</head>
+<body class="flex bg-[#050505] text-white font-sans antialiased overflow-hidden select-none">
+
+<!-- BACKGROUND STACK -->
+<!-- 1. Landscape overlay -->
+<div class="fixed inset-0 z-0 pointer-events-none">
+  <img alt="Lumina Background" class="w-full h-full object-cover opacity-25 mix-blend-luminosity" src="assets/2b5079f4-4ddd-433b-a936-fc8f7d_7da21e998877.webp" onerror="this.style.display='none'"/>
+  <div class="absolute inset-0 bg-gradient-to-b from-[#050505]/95 via-[#050505]/80 to-[#050505]"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-950/20 via-transparent to-transparent"></div>
+  <div class="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+</div>
+
+<!-- 2. Vertical Grid with Falling Laser Beams -->
+<div class="fixed inset-0 z-0 pointer-events-none flex w-full max-w-7xl mx-auto border-r border-white/5 opacity-50">
+  <div class="flex-1 border-l border-white/5 h-full relative overflow-hidden">
+    <span class="absolute bottom-6 left-4 text-white/10 text-xs font-mono">01</span>
+  </div>
+  <div class="flex-1 border-l border-white/5 h-full relative overflow-hidden">
+    <div class="absolute top-0 -left-[1px] w-[1px] h-64 bg-gradient-to-b from-transparent via-orange-500/60 to-transparent animate-beam-1"></div>
+    <span class="absolute bottom-6 left-4 text-white/10 text-xs font-mono">02</span>
+  </div>
+  <div class="flex-1 border-l border-white/5 h-full flex justify-center relative overflow-hidden">
+    <div class="absolute top-0 -left-[1px] w-[1px] h-96 bg-gradient-to-b from-transparent via-orange-500/80 to-transparent animate-beam-2"></div>
+    <div class="h-full border-r border-dashed border-orange-500/15 w-px"></div>
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1px] h-64 bg-gradient-to-b from-transparent via-orange-500 to-transparent animate-beam-1" style="animation-delay: 1.5s;"></div>
+    <span class="absolute bottom-6 text-orange-500/30 text-xs font-mono">03</span>
+  </div>
+  <div class="flex-1 border-l border-white/5 h-full relative overflow-hidden">
+    <div class="absolute top-0 -left-[1px] w-[1px] h-48 bg-gradient-to-b from-transparent via-orange-500/60 to-transparent animate-beam-3"></div>
+    <span class="absolute bottom-6 left-4 text-white/10 text-xs font-mono">04</span>
+  </div>
+  <div class="flex-1 border-l border-white/5 h-full relative overflow-hidden">
+    <span class="absolute bottom-6 left-4 text-white/10 text-xs font-mono">05</span>
+  </div>
+</div>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div id="backdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+<!-- APP WRAPPER -->
+<div class="relative z-10 flex w-full h-full overflow-hidden">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="w-72 md:w-80 flex-shrink-0 flex flex-col h-full bg-[#080808]/90 md:bg-[#070707]/60 backdrop-blur-2xl border-r border-white/5 p-4 justify-between transition-transform">
+    
+    <!-- Top Brand & New Chat -->
+    <div class="flex flex-col gap-5">
+      <!-- Brand Logo -->
+      <div class="flex items-center justify-between px-2 pt-2">
+        <div class="flex items-center gap-3">
+          <div class="flex bg-gradient-to-tr from-orange-500 to-amber-400 w-9 h-9 rounded-full items-center justify-center shadow-lg shadow-orange-500/25" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)); --border-radius-before: 9999px;">
+            <div class="w-3 h-3 bg-black rounded-full" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0)); --border-radius-before: 9999px"></div>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-base font-semibold tracking-tight text-white flex items-center gap-1.5">
+              Lumina
+              <span class="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20">CHAT 2.0</span>
+            </span>
+            <span class="text-[11px] text-neutral-500">Free GPT Engine</span>
+          </div>
+        </div>
+
+        <!-- Mobile close button -->
+        <button onclick="toggleSidebar(false)" class="md:hidden p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- New Chat Button -->
+      <button onclick="createNewChat()" class="group relative flex items-center justify-between w-full px-4 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] transition-all duration-300 text-left border border-white/10 hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/10" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0)); --border-radius-before: 12px;">
+        <div class="flex items-center gap-3">
+          <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-black shadow-md shadow-orange-500/30">
+            <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+          </div>
+          <span class="text-sm font-medium text-white/90 group-hover:text-white">Nova Conversa</span>
+        </div>
+        <kbd class="hidden sm:inline-block text-[10px] font-mono text-neutral-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">Ctrl+K</kbd>
+      </button>
+
+      <!-- History Header -->
+      <div class="flex items-center justify-between px-2 pt-2">
+        <span class="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Histórico</span>
+        <button onclick="clearAllChats()" title="Limpar todo o histórico" class="text-neutral-500 hover:text-red-400 transition-colors p-1">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Chat Sessions List -->
+      <div id="chatHistoryList" class="flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-420px)] pr-1">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Bottom User, Settings & Status -->
+    <div class="flex flex-col gap-3 pt-4 border-t border-white/5">
+      
+      <!-- User Profile / Auth Area -->
+      <div id="userProfileArea">
+        <!-- Rendered dynamically (Login button or user profile card) -->
+      </div>
+
+      <!-- Backend Status Pill -->
+      <div onclick="openSettingsModal()" class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 transition-all cursor-pointer group">
+        <div class="flex items-center gap-2.5">
+          <div id="statusDot" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse"></div>
+          <div class="flex flex-col">
+            <span id="statusLabel" class="text-xs font-medium text-neutral-300 group-hover:text-white">API Conectada</span>
+            <span id="apiHostLabel" class="text-[10px] font-mono text-neutral-500 truncate max-w-[160px]">localhost:8000</span>
+          </div>
+        </div>
+        <i data-lucide="settings" class="w-4 h-4 text-neutral-500 group-hover:text-orange-400 transition-colors"></i>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="flex items-center justify-between px-2 text-[11px] text-neutral-500">
+        <span>Lumina Creative</span>
+        <a href="https://openrouter.ai" target="_blank" class="hover:text-neutral-300 transition-colors flex items-center gap-1">
+          OpenRouter <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CHAT VIEW -->
+  <main class="flex-1 flex flex-col h-full min-w-0 relative">
+    
+    <!-- Top Navbar -->
+    <header class="h-16 flex-shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-white/5 bg-[#050505]/60 backdrop-blur-xl z-20">
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- Mobile Sidebar Toggle -->
+        <button onclick="toggleSidebar(true)" class="md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+          <h2 id="activeChatTitle" class="text-sm font-medium text-white truncate max-w-[220px] sm:max-w-md">Conversa sem título</h2>
+        </div>
+      </div>
+
+      <!-- Topbar Actions -->
+      <div class="flex items-center gap-3">
+        <!-- Model Indicator Badge -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/10 text-neutral-300 text-xs font-mono">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-orange-400"></i>
+          <span id="activeModelName" class="truncate max-w-[200px]">nemotron-3-ultra</span>
+        </div>
+
+        <!-- Export Chat -->
+        <button onclick="exportCurrentChat()" title="Exportar conversa para Markdown" class="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
+          <i data-lucide="download" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Clear Chat Messages -->
+        <button onclick="clearCurrentChatMessages()" title="Limpar mensagens desta conversa" class="p-2 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Messages Container -->
+    <div id="chatScrollArea" class="flex-1 overflow-y-auto px-4 md:px-8 py-6 flex flex-col">
+      <div class="w-full max-w-3xl mx-auto flex-1 flex flex-col justify-start">
+        
+        <!-- EMPTY STATE (WELCOME SCREEN) -->
+        <div id="welcomeState" class="flex-1 flex flex-col items-center justify-center text-center py-10 my-auto">
+          
+          <!-- Eyebrow Badge -->
+          <div class="inline-flex items-center gap-2 text-orange-400 mb-6 px-3.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 backdrop-blur-md">
+            <span class="flex h-2 w-2 rounded-full bg-orange-500 animate-pulse"></span>
+            <span class="text-xs font-bold tracking-widest uppercase">Suite Conversacional 2.0</span>
+          </div>
+
+          <!-- Hero Headline -->
+          <h1 class="text-4xl sm:text-5xl md:text-6xl font-medium tracking-tighter text-white mb-4 leading-tight">
+            Crie Histórias &amp;
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-white">Soluções.</span>
+          </h1>
+
+          <p class="text-neutral-400 max-w-lg text-base leading-relaxed mb-10">
+            Conectado ao modelo de inteligência artificial de alta escala. Faça perguntas, gere código, elabore estratégias e refine seus projetos em tempo real.
+          </p>
+
+          <!-- Suggestion Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full max-w-2xl text-left">
+            
+            <div onclick="useSuggestion('Explique a arquitetura de microserviços e quando utilizá-la em projetos modernos')" class="group p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-orange-500/30 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-orange-500/10" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 12px;">
+              <div class="flex items-center gap-2 text-orange-400 text-xs font-semibold uppercase tracking-wider mb-1.5">
+                <i data-lucide="cpu" class="w-3.5 h-3.5"></i> Arquitetura
+              </div>
+              <p class="text-xs text-neutral-300 group-hover:text-white leading-relaxed">
+                Explique a arquitetura de microserviços e quando utilizá-la em projetos modernos.
+              </p>
+            </div>
+
+            <div onclick="useSuggestion('Escreva um script em Python para consumir uma API REST com requisições assíncronas e tratamento de erros')" class="group p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-orange-500/30 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-orange-500/10" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 12px;">
+              <div class="flex items-center gap-2 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-1.5">
+                <i data-lucide="terminal" class="w-3.5 h-3.5"></i> Código Python
+              </div>
+              <p class="text-xs text-neutral-300 group-hover:text-white leading-relaxed">
+                Escreva um script em Python assíncrono para consumir APIs com httpx e tratamento de erros.
+              </p>
+            </div>
+
+            <div onclick="useSuggestion('Crie ideias criativas de narrativa visual e copy de lançamento para uma ferramenta de IA cinematográfica')" class="group p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-orange-500/30 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-orange-500/10" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 12px;">
+              <div class="flex items-center gap-2 text-orange-400 text-xs font-semibold uppercase tracking-wider mb-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Criatividade
+              </div>
+              <p class="text-xs text-neutral-300 group-hover:text-white leading-relaxed">
+                Crie ideias de storytelling e copy de lançamento para uma plataforma de IA cinematográfica.
+              </p>
+            </div>
+
+            <div onclick="useSuggestion('Como estruturar um prompt de sistema para manter um agente focado, conciso e profissional?')" class="group p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-orange-500/30 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-orange-500/10" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 12px;">
+              <div class="flex items-center gap-2 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-1.5">
+                <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Engenharia de Prompt
+              </div>
+              <p class="text-xs text-neutral-300 group-hover:text-white leading-relaxed">
+                Como estruturar um prompt de sistema para manter um agente focado e conciso?
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- MESSAGES FEED -->
+        <div id="messagesList" class="flex flex-col gap-6 w-full py-4">
+          <!-- Messages will be rendered dynamically here -->
+        </div>
+
+        <!-- TYPING INDICATOR -->
+        <div id="typingIndicator" class="hidden flex items-start gap-3.5 animate-message mb-4">
+          <div class="flex bg-gradient-to-tr from-orange-500 to-amber-400 w-8 h-8 rounded-full items-center justify-center flex-shrink-0 shadow-md shadow-orange-500/20" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)); --border-radius-before: 9999px;">
+            <div class="w-2.5 h-2.5 bg-black rounded-full"></div>
+          </div>
+          <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style="animation-delay: 0ms"></span>
+            <span class="w-2 h-2 rounded-full bg-orange-400 animate-bounce" style="animation-delay: 150ms"></span>
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style="animation-delay: 300ms"></span>
+            <span class="text-xs text-neutral-400 ml-2 font-mono">Gerando resposta...</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- BOTTOM COMPOSER BAR -->
+    <div class="flex-shrink-0 p-4 md:p-6 w-full max-w-3xl mx-auto z-20">
+      <div class="composer-container relative rounded-2xl overflow-hidden p-[1px] shadow-2xl transition-all duration-300">
+        
+        <!-- Rotating Conic Border on Focus -->
+        <div class="conic-focus-ring"></div>
+
+        <!-- Composer Inner Container -->
+        <div class="relative bg-[#0c0c0c]/90 backdrop-blur-2xl rounded-2xl border border-white/10 p-3 md:p-4 flex flex-col gap-2">
+          
+          <div class="flex items-end gap-3">
+            <!-- Textarea -->
+            <textarea
+              id="messageInput"
+              rows="1"
+              placeholder="Envie uma mensagem para a IA..."
+              class="w-full bg-transparent text-white text-sm md:text-base outline-none resize-none max-h-36 min-h-[26px] placeholder:text-neutral-500"
+              oninput="autoResizeTextarea(this)"
+              onkeydown="handleKeyDown(event)"
+            ></textarea>
+
+            <!-- Send Button with Particle Animation -->
+            <button
+              id="sendButton"
+              type="button"
+              onclick="sendMessage()"
+              class="button-custom flex-shrink-0 !p-2.5 !min-h-[42px] !w-[42px] rounded-full hover:scale-105 transition-transform"
+              title="Enviar mensagem (Enter)"
+            >
+              <div class="points_wrapper">
+                <i class="point"></i><i class="point"></i><i class="point"></i><i class="point"></i>
+              </div>
+              <span class="inner">
+                <i data-lucide="arrow-right" class="w-4 h-4 stroke-[2.5] text-white"></i>
+              </span>
+            </button>
+          </div>
+
+          <!-- Composer Helper Footer -->
+          <div class="flex items-center justify-between text-[11px] text-neutral-500 pt-1 px-1">
+            <div class="flex items-center gap-2">
+              <span class="hidden sm:inline">Pressione <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-400 font-mono text-[10px]">Enter</kbd> para enviar</span>
+              <span class="hidden sm:inline">· <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-400 font-mono text-[10px]">Shift+Enter</kbd> para linha</span>
+            </div>
+            <span id="charCounter" class="font-mono text-[10px] text-neutral-600">0 caracteres</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- AUTH MODAL (LOGIN & CADASTRO) -->
+<div id="authModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 hidden">
+  <div class="relative w-full max-w-md bg-[#0d0d0d] border border-white/10 rounded-2xl p-7 shadow-2xl" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0)); --border-radius-before: 16px;">
+    
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="flex bg-gradient-to-tr from-orange-500 to-amber-400 w-8 h-8 rounded-full items-center justify-center shadow-lg shadow-orange-500/25" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)); --border-radius-before: 9999px;">
+          <div class="w-2.5 h-2.5 bg-black rounded-full"></div>
+        </div>
+        <div>
+          <h3 id="authModalTitle" class="text-base font-semibold text-white">Acessar Conta</h3>
+          <p class="text-xs text-neutral-400">Entre para desbloquear o chat com IA</p>
+        </div>
+      </div>
+      <button onclick="closeAuthModal()" class="text-neutral-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Auth Tabs Switcher -->
+    <div class="grid grid-cols-2 p-1 rounded-xl bg-white/[0.04] border border-white/10 mb-5">
+      <button id="tabLoginBtn" type="button" onclick="switchAuthTab('login')" class="py-2 text-xs font-semibold rounded-lg transition-all bg-orange-500 text-black shadow-md">
+        Entrar
+      </button>
+      <button id="tabRegisterBtn" type="button" onclick="switchAuthTab('register')" class="py-2 text-xs font-medium rounded-lg text-neutral-400 hover:text-white transition-all">
+        Criar Conta
+      </button>
+    </div>
+
+    <!-- Error Alert Box -->
+    <div id="authErrorBox" class="hidden mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
+      <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+      <span id="authErrorText">Mensagem de erro</span>
+    </div>
+
+    <!-- Form -->
+    <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-4">
+      
+      <!-- Name Field (Register only) -->
+      <div id="authNameField" class="hidden">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+          Seu Nome
+        </label>
+        <div class="relative">
+          <input
+            id="authNameInput"
+            type="text"
+            placeholder="Ex: Ana Silva"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm outline-none focus:border-orange-500 transition-colors placeholder:text-neutral-600"
+          />
+        </div>
+      </div>
+
+      <!-- Email Field -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+          Email
+        </label>
+        <div class="relative">
+          <input
+            id="authEmailInput"
+            type="email"
+            required
+            placeholder="seu@email.com"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm outline-none focus:border-orange-500 transition-colors placeholder:text-neutral-600"
+          />
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+          Senha
+        </label>
+        <div class="relative">
+          <input
+            id="authPasswordInput"
+            type="password"
+            required
+            placeholder="Mínimo 6 caracteres"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm outline-none focus:border-orange-500 transition-colors placeholder:text-neutral-600"
+          />
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        id="authSubmitBtn"
+        type="submit"
+        class="w-full py-3 mt-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-lg shadow-orange-500/25 hover:opacity-95 transition-all flex items-center justify-center gap-2"
+      >
+        <span id="authSubmitText">Entrar</span>
+        <i data-lucide="arrow-right" class="w-4 h-4 stroke-[2.5]"></i>
+      </button>
+
+      <!-- Footer Note -->
+      <p id="authSwitchNote" class="text-center text-xs text-neutral-500 mt-2">
+        Não tem conta? <button type="button" onclick="switchAuthTab('register')" class="text-orange-400 hover:underline">Cadastre-se grátis</button>
+      </p>
+
+    </form>
+  </div>
+</div>
+
+<!-- API SETTINGS MODAL -->
+<div id="settingsModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 hidden">
+  <div class="relative w-full max-w-md bg-[#0d0d0d] border border-white/10 rounded-2xl p-6 shadow-2xl" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0)); --border-radius-before: 16px;">
+    
+    <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+          <i data-lucide="sliders" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-semibold text-white">Configurações da API</h3>
+          <p class="text-xs text-neutral-400">Endpoint do servidor FastAPI</p>
+        </div>
+      </div>
+      <button onclick="closeSettingsModal()" class="text-neutral-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <form onsubmit="saveApiSettings(event)" class="flex flex-col gap-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+          URL Base do Backend
+        </label>
+        <input
+          id="apiBaseInput"
+          type="text"
+          placeholder="http://localhost:8000"
+          class="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm font-mono outline-none focus:border-orange-500 transition-colors"
+        />
+        <p class="text-[11px] text-neutral-500 mt-1.5">
+          O endpoint consumido será <code class="text-orange-400/90 font-mono">POST /send_message</code>.
+        </p>
+      </div>
+
+      <div class="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div id="modalStatusDot" class="w-2 h-2 rounded-full bg-neutral-600"></div>
+          <span id="modalStatusText" class="text-xs text-neutral-400">Verificando status...</span>
+        </div>
+        <button type="button" onclick="testApiConnection()" class="text-xs text-orange-400 hover:text-orange-300 font-medium">
+          Testar Conexão
+        </button>
+      </div>
+
+      <div class="flex justify-end gap-2.5 pt-2">
+        <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition-colors">
+          Cancelar
+        </button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-lg shadow-orange-500/20 hover:opacity-95 transition-opacity">
+          Salvar Alterações
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-neutral-900 border border-white/10 shadow-2xl text-xs font-medium text-white flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300">
+  <i id="toastIcon" data-lucide="check" class="w-4 h-4 text-orange-400"></i>
+  <span id="toastMessage">Operação realizada</span>
+</div>
+
+<!-- JAVASCRIPT LOGIC -->
+<script>
+(() => {
+  // Application State Keys
+  const STORAGE_CHATS_KEY = 'lumina_chat_sessions_v2';
+  const STORAGE_ACTIVE_KEY = 'lumina_active_session_v2';
+  const STORAGE_API_KEY = 'lumina_api_base_v2';
+  const STORAGE_TOKEN_KEY = 'lumina_auth_token_v2';
+  const STORAGE_USER_KEY = 'lumina_auth_user_v2';
+
+  let apiBase = localStorage.getItem(STORAGE_API_KEY) || detectDefaultApiBase();
+  let chats = loadChats();
+  let activeChatId = localStorage.getItem(STORAGE_ACTIVE_KEY) || (chats[0] ? chats[0].id : null);
+  let isGenerating = false;
+
+  // Auth State
+  let authToken = localStorage.getItem(STORAGE_TOKEN_KEY) || null;
+  let currentUser = loadUser();
+  let currentAuthTab = 'login'; // 'login' | 'register'
+
+  function detectDefaultApiBase() {
+    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+      return window.location.origin;
+    }
+    return 'http://127.0.0.1:8000';
+  }
+
+  function uid() {
+    return 'chat_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+  }
+
+  function loadChats() {
+    try {
+      const raw = localStorage.getItem(STORAGE_CHATS_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveChats() {
+    localStorage.setItem(STORAGE_CHATS_KEY, JSON.stringify(chats));
+    if (activeChatId) {
+      localStorage.setItem(STORAGE_ACTIVE_KEY, activeChatId);
+    }
+  }
+
+  function loadUser() {
+    try {
+      const raw = localStorage.getItem(STORAGE_USER_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function getActiveChat() {
+    return chats.find(c => c.id === activeChatId) || null;
+  }
+
+  // DOM Elements
+  const chatHistoryList = document.getElementById('chatHistoryList');
+  const messagesList = document.getElementById('messagesList');
+  const welcomeState = document.getElementById('welcomeState');
+  const messageInput = document.getElementById('messageInput');
+  const sendButton = document.getElementById('sendButton');
+  const typingIndicator = document.getElementById('typingIndicator');
+  const activeChatTitle = document.getElementById('activeChatTitle');
+  const chatScrollArea = document.getElementById('chatScrollArea');
+  const statusDot = document.getElementById('statusDot');
+  const statusLabel = document.getElementById('statusLabel');
+  const apiHostLabel = document.getElementById('apiHostLabel');
+  const charCounter = document.getElementById('charCounter');
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('backdrop');
+  const userProfileArea = document.getElementById('userProfileArea');
+
+  // Initialization
+  window.addEventListener('DOMContentLoaded', () => {
+    if (chats.length === 0) {
+      createNewChat(false);
+    } else if (!activeChatId || !getActiveChat()) {
+      activeChatId = chats[0].id;
+    }
+
+    renderHistory();
+    renderActiveChat();
+    renderUserSection();
+    updateApiHostLabel();
+    testApiConnection();
+    validateStoredSession();
+
+    // Check Lucide icons initialization
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        createNewChat();
+      }
+    });
+  });
+
+  // User Section in Sidebar
+  function renderUserSection() {
+    if (currentUser && authToken) {
+      const initial = (currentUser.name || currentUser.email || 'U')[0].toUpperCase();
+      userProfileArea.innerHTML = `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10 shadow-md">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center font-bold text-xs text-black flex-shrink-0 shadow-md shadow-orange-500/20">
+              ${initial}
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="text-xs font-semibold text-white truncate">${escapeHtml(currentUser.name || 'Usuário')}</span>
+              <span class="text-[10px] text-neutral-400 truncate">${escapeHtml(currentUser.email || '')}</span>
+            </div>
+          </div>
+          <button onclick="logoutUser()" title="Sair da conta" class="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-white/5 transition-colors">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      userProfileArea.innerHTML = `
+        <button onclick="openAuthModal('login')" class="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 hover:text-orange-300 text-xs font-semibold transition-all shadow-md shadow-orange-500/5">
+          <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+          <span>Entrar ou Cadastrar</span>
+        </button>
+      `;
+    }
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Session Validation
+  async function validateStoredSession() {
+    if (!authToken) return;
+    try {
+      const res = await fetch(`${apiBase}/auth/me`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        currentUser = data.user;
+        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(currentUser));
+        renderUserSection();
+      } else if (res.status === 401) {
+        logoutUser(false);
+      }
+    } catch {}
+  }
+
+  // Auth Modal Functions
+  window.openAuthModal = function(tab = 'login') {
+    switchAuthTab(tab);
+    clearAuthErrors();
+    document.getElementById('authModal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  };
+
+  window.closeAuthModal = function() {
+    document.getElementById('authModal').classList.add('hidden');
+  };
+
+  window.switchAuthTab = function(tab) {
+    currentAuthTab = tab;
+    clearAuthErrors();
+
+    const titleEl = document.getElementById('authModalTitle');
+    const nameField = document.getElementById('authNameField');
+    const submitText = document.getElementById('authSubmitText');
+    const tabLoginBtn = document.getElementById('tabLoginBtn');
+    const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+    const switchNote = document.getElementById('authSwitchNote');
+
+    if (tab === 'login') {
+      titleEl.textContent = 'Acessar Conta';
+      nameField.classList.add('hidden');
+      submitText.textContent = 'Entrar';
+      tabLoginBtn.className = 'py-2 text-xs font-semibold rounded-lg transition-all bg-orange-500 text-black shadow-md';
+      tabRegisterBtn.className = 'py-2 text-xs font-medium rounded-lg text-neutral-400 hover:text-white transition-all';
+      switchNote.innerHTML = `Não tem conta? <button type="button" onclick="switchAuthTab('register')" class="text-orange-400 hover:underline">Cadastre-se grátis</button>`;
+    } else {
+      titleEl.textContent = 'Criar Nova Conta';
+      nameField.classList.remove('hidden');
+      submitText.textContent = 'Criar Minha Conta';
+      tabRegisterBtn.className = 'py-2 text-xs font-semibold rounded-lg transition-all bg-orange-500 text-black shadow-md';
+      tabLoginBtn.className = 'py-2 text-xs font-medium rounded-lg text-neutral-400 hover:text-white transition-all';
+      switchNote.innerHTML = `Já possui uma conta? <button type="button" onclick="switchAuthTab('login')" class="text-orange-400 hover:underline">Entrar agora</button>`;
+    }
+
+    if (window.lucide) lucide.createIcons();
+  };
+
+  function clearAuthErrors() {
+    const box = document.getElementById('authErrorBox');
+    box.classList.add('hidden');
+  }
+
+  function showAuthError(msg) {
+    const box = document.getElementById('authErrorBox');
+    const text = document.getElementById('authErrorText');
+    text.textContent = msg;
+    box.classList.remove('hidden');
+  }
+
+  window.handleAuthSubmit = async function(e) {
+    e.preventDefault();
+    clearAuthErrors();
+
+    const email = document.getElementById('authEmailInput').value.trim();
+    const password = document.getElementById('authPasswordInput').value;
+    const name = document.getElementById('authNameInput').value.trim();
+    const submitBtn = document.getElementById('authSubmitBtn');
+
+    if (currentAuthTab === 'register' && !name) {
+      showAuthError('Informe seu nome para continuar.');
+      return;
+    }
+    if (password.length < 6) {
+      showAuthError('A senha deve conter no mínimo 6 caracteres.');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.6';
+
+    const endpoint = currentAuthTab === 'register' ? `${apiBase}/auth/register` : `${apiBase}/auth/login`;
+    const payload = currentAuthTab === 'register' ? { name, email, password } : { email, password };
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || 'Ocorreu um erro na autenticação.');
+      }
+
+      // Success
+      authToken = data.token;
+      currentUser = data.user;
+      localStorage.setItem(STORAGE_TOKEN_KEY, authToken);
+      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(currentUser));
+
+      renderUserSection();
+      closeAuthModal();
+      showToast(currentAuthTab === 'register' ? `Bem-vindo(a), ${currentUser.name}!` : `Olá novamente, ${currentUser.name}!`);
+
+    } catch (err) {
+      showAuthError(err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+    }
+  };
+
+  window.logoutUser = function(showNotice = true) {
+    authToken = null;
+    currentUser = null;
+    localStorage.removeItem(STORAGE_TOKEN_KEY);
+    localStorage.removeItem(STORAGE_USER_KEY);
+    renderUserSection();
+    if (showNotice) {
+      showToast('Você saiu da sua conta.');
+    }
+  };
+
+  // Global functions attached to window for HTML handlers
+  window.toggleSidebar = function(open) {
+    if (open) {
+      sidebar.classList.add('open');
+      backdrop.classList.remove('hidden');
+    } else {
+      sidebar.classList.remove('open');
+      backdrop.classList.add('hidden');
+    }
+  };
+
+  window.createNewChat = function(shouldFocus = true) {
+    const newChat = {
+      id: uid(),
+      title: 'Nova Conversa',
+      createdAt: new Date().toISOString(),
+      messages: []
+    };
+    chats.unshift(newChat);
+    activeChatId = newChat.id;
+    saveChats();
+    renderHistory();
+    renderActiveChat();
+    toggleSidebar(false);
+    if (shouldFocus) {
+      messageInput.focus();
+    }
+  };
+
+  window.selectChat = function(id) {
+    if (activeChatId === id) return;
+    activeChatId = id;
+    saveChats();
+    renderHistory();
+    renderActiveChat();
+    toggleSidebar(false);
+  };
+
+  window.deleteChat = function(e, id) {
+    e.stopPropagation();
+    chats = chats.filter(c => c.id !== id);
+    if (chats.length === 0) {
+      createNewChat(false);
+    } else if (activeChatId === id) {
+      activeChatId = chats[0].id;
+      renderActiveChat();
+    }
+    saveChats();
+    renderHistory();
+    showToast('Conversa excluída');
+  };
+
+  window.clearAllChats = function() {
+    if (chats.length === 0) return;
+    if (!confirm('Deseja realmente apagar todo o histórico de conversas?')) return;
+    chats = [];
+    createNewChat(false);
+    showToast('Histórico limpo');
+  };
+
+  window.clearCurrentChatMessages = function() {
+    const active = getActiveChat();
+    if (!active || active.messages.length === 0) return;
+    active.messages = [];
+    saveChats();
+    renderActiveChat();
+    showToast('Mensagens apagadas');
+  };
+
+  window.exportCurrentChat = function() {
+    const active = getActiveChat();
+    if (!active || active.messages.length === 0) {
+      showToast('Não há mensagens para exportar');
+      return;
+    }
+    let md = `# ${active.title}\n*Exportado em ${new Date().toLocaleString()}*\n\n---\n\n`;
+    active.messages.forEach(m => {
+      const roleName = m.role === 'user' ? '**Você:**' : '**Lumina AI:**';
+      md += `${roleName}\n\n${m.content}\n\n---\n\n`;
+    });
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${active.title.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'chat'}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Conversa exportada em Markdown');
+  };
+
+  window.useSuggestion = function(text) {
+    messageInput.value = text;
+    autoResizeTextarea(messageInput);
+    sendMessage();
+  };
+
+  window.autoResizeTextarea = function(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+    charCounter.textContent = `${el.value.length} caracteres`;
+  };
+
+  window.handleKeyDown = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  // Rendering
+  function renderHistory() {
+    chatHistoryList.innerHTML = '';
+    chats.forEach(chat => {
+      const isActive = chat.id === activeChatId;
+      const item = document.createElement('div');
+      item.className = `group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 text-xs ${
+        isActive 
+          ? 'bg-orange-500/10 text-white border border-orange-500/30 shadow-md shadow-orange-500/5' 
+          : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.04] border border-transparent'
+      }`;
+      item.onclick = () => selectChat(chat.id);
+
+      item.innerHTML = `
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <i data-lucide="${isActive ? 'message-circle' : 'message-square'}" class="w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-orange-400' : 'text-neutral-500'}"></i>
+          <span class="truncate font-medium">${escapeHtml(chat.title || 'Conversa sem título')}</span>
+        </div>
+        <button onclick="deleteChat(event, '${chat.id}')" title="Excluir" class="opacity-0 group-hover:opacity-100 p-1 text-neutral-500 hover:text-red-400 transition-opacity">
+          <i data-lucide="trash" class="w-3 h-3"></i>
+        </button>
+      `;
+
+      chatHistoryList.appendChild(item);
+    });
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderActiveChat() {
+    const active = getActiveChat();
+    if (!active) return;
+
+    activeChatTitle.textContent = active.title || 'Conversa sem título';
+    messagesList.innerHTML = '';
+
+    if (!active.messages || active.messages.length === 0) {
+      welcomeState.classList.remove('hidden');
+      messagesList.classList.add('hidden');
+    } else {
+      welcomeState.classList.add('hidden');
+      messagesList.classList.remove('hidden');
+
+      active.messages.forEach((msg, idx) => {
+        appendMessageElement(msg, idx === active.messages.length - 1);
+      });
+    }
+
+    scrollToBottom();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function appendMessageElement(msg, isLatest = false) {
+    const isUser = msg.role === 'user';
+    const row = document.createElement('div');
+    row.className = `flex gap-3.5 w-full animate-message ${isUser ? 'justify-end' : 'justify-start'}`;
+
+    if (isUser) {
+      row.innerHTML = `
+        <div class="flex flex-col items-end max-w-[85%] sm:max-w-[78%]">
+          <div class="px-4 py-3 rounded-2xl rounded-tr-sm bg-gradient-to-b from-orange-500 to-orange-600 text-black font-medium shadow-lg shadow-orange-500/20 text-sm md:text-base leading-relaxed break-words" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0)); --border-radius-before: 16px;">
+            ${escapeHtml(msg.content)}
+          </div>
+          <span class="text-[10px] text-neutral-500 mt-1 font-mono">${formatTime(msg.timestamp)}</span>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0 text-white/90">
+          <i data-lucide="user" class="w-4 h-4"></i>
+        </div>
+      `;
+    } else {
+      row.innerHTML = `
+        <div class="flex bg-gradient-to-tr from-orange-500 to-amber-400 w-8 h-8 rounded-full items-center justify-center flex-shrink-0 shadow-md shadow-orange-500/20 mt-1" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)); --border-radius-before: 9999px;">
+          <div class="w-2.5 h-2.5 bg-black rounded-full"></div>
+        </div>
+        <div class="flex flex-col max-w-[88%] sm:max-w-[84%] min-w-0">
+          <div class="p-4 md:p-5 rounded-2xl rounded-tl-sm bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-xl chat-text text-neutral-200" style="position: relative; --border-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0)); --border-radius-before: 16px;">
+            ${renderMarkdown(msg.content)}
+          </div>
+          <div class="flex items-center gap-3 mt-1.5 px-1">
+            <span class="text-[10px] text-neutral-500 font-mono">${formatTime(msg.timestamp)}</span>
+            <button onclick="copyRawText(this, ${JSON.stringify(msg.content).replace(/"/g, '&quot;')})" class="flex items-center gap-1 text-[11px] text-neutral-500 hover:text-white transition-colors">
+              <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    messagesList.appendChild(row);
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function scrollToBottom() {
+    setTimeout(() => {
+      chatScrollArea.scrollTop = chatScrollArea.scrollHeight;
+    }, 40);
+  }
+
+  // Send Message Logic
+  window.sendMessage = async function() {
+    if (isGenerating) return;
+
+    // Check if user is authenticated
+    if (!authToken) {
+      openAuthModal('login');
+      showToast('Faça login ou crie sua conta para enviar mensagens.');
+      return;
+    }
+
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    const active = getActiveChat();
+    if (!active) return;
+
+    // Reset input
+    messageInput.value = '';
+    messageInput.style.height = 'auto';
+    charCounter.textContent = '0 caracteres';
+
+    // Auto-title from first message
+    if (active.messages.length === 0) {
+      active.title = text.slice(0, 32) + (text.length > 32 ? '...' : '');
+      activeChatTitle.textContent = active.title;
+      renderHistory();
+    }
+
+    // Add user message
+    const userMsg = {
+      role: 'user',
+      content: text,
+      timestamp: new Date().toISOString()
+    };
+    active.messages.push(userMsg);
+    saveChats();
+
+    // Render immediately
+    welcomeState.classList.add('hidden');
+    messagesList.classList.remove('hidden');
+    appendMessageElement(userMsg, true);
+    scrollToBottom();
+
+    // Show typing indicator
+    isGenerating = true;
+    sendButton.disabled = true;
+    sendButton.style.opacity = '0.5';
+    typingIndicator.classList.remove('hidden');
+    scrollToBottom();
+
+    try {
+      const response = await fetch(`${apiBase}/send_message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ message: text })
+      });
+
+      if (response.status === 401) {
+        logoutUser(false);
+        openAuthModal('login');
+        throw new Error('Sua sessão expirou. Faça login novamente.');
+      }
+
+      if (!response.ok) {
+        let errDetails = `Erro HTTP ${response.status}`;
+        try {
+          const errData = await response.json();
+          errDetails = errData.detail || errData.message || errDetails;
+        } catch {}
+        throw new Error(errDetails);
+      }
+
+      const data = await response.json();
+      const reply = data.reply || '*(Resposta sem conteúdo recebida da IA)*';
+
+      const assistantMsg = {
+        role: 'assistant',
+        content: reply,
+        timestamp: new Date().toISOString()
+      };
+      active.messages.push(assistantMsg);
+      saveChats();
+
+      typingIndicator.classList.add('hidden');
+      appendMessageElement(assistantMsg, true);
+      scrollToBottom();
+      setApiOnline(true);
+
+    } catch (err) {
+      console.error('Erro ao chamar o backend:', err);
+      typingIndicator.classList.add('hidden');
+
+      const isConnError = err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
+      const errorReply = isConnError 
+        ? `⚠️ **Falha de Conexão com o Backend**\n\nNão foi possível conectar ao servidor em \`${apiBase}\`.\n\n**O que fazer:**\n1. Verifique se o backend está executando no terminal com:\n   \`\`\`bash\n   cd app\n   uv run python main.py\n   \`\`\`\n2. Clique em **Configurações da API** na barra lateral para ajustar o endereço se necessário.`
+        : `⚠️ **Erro:**\n\n${err.message}`;
+
+      const errorMsg = {
+        role: 'assistant',
+        content: errorReply,
+        timestamp: new Date().toISOString()
+      };
+      active.messages.push(errorMsg);
+      saveChats();
+      appendMessageElement(errorMsg, true);
+      scrollToBottom();
+      if (!isConnError) setApiOnline(true);
+      showToast('Erro ao processar mensagem');
+
+    } finally {
+      isGenerating = false;
+      sendButton.disabled = false;
+      sendButton.style.opacity = '1';
+      messageInput.focus();
+    }
+  };
+
+  // API Status Check
+  async function testApiConnection() {
+    const modalDot = document.getElementById('modalStatusDot');
+    const modalText = document.getElementById('modalStatusText');
+    if (modalText) modalText.textContent = 'Verificando conexão...';
+
+    try {
+      const res = await fetch(`${apiBase}/openapi.json`, { method: 'GET' });
+      if (res.ok) {
+        setApiOnline(true);
+        if (modalDot) {
+          modalDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+          modalText.textContent = 'Backend online e acessível';
+        }
+        return true;
+      }
+    } catch {}
+
+    setApiOnline(false);
+    if (modalDot) {
+      modalDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+      modalText.textContent = 'Não foi possível conectar (offline)';
+    }
+    return false;
+  }
+
+  function setApiOnline(online) {
+    if (online) {
+      statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse';
+      statusLabel.textContent = 'API Conectada';
+      statusLabel.className = 'text-xs font-medium text-emerald-400';
+    } else {
+      statusDot.className = 'w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]';
+      statusLabel.textContent = 'API Desconectada';
+      statusLabel.className = 'text-xs font-medium text-rose-400';
+    }
+  }
+
+  function updateApiHostLabel() {
+    try {
+      const url = new URL(apiBase);
+      apiHostLabel.textContent = url.host || apiBase;
+    } catch {
+      apiHostLabel.textContent = apiBase;
+    }
+    const input = document.getElementById('apiBaseInput');
+    if (input) input.value = apiBase;
+  }
+
+  // Settings Modal Handlers
+  window.openSettingsModal = function() {
+    document.getElementById('settingsModal').classList.remove('hidden');
+    updateApiHostLabel();
+    testApiConnection();
+    if (window.lucide) lucide.createIcons();
+  };
+
+  window.closeSettingsModal = function() {
+    document.getElementById('settingsModal').classList.add('hidden');
+  };
+
+  window.saveApiSettings = function(e) {
+    e.preventDefault();
+    const input = document.getElementById('apiBaseInput');
+    let val = input.value.trim();
+    if (!val) val = 'http://127.0.0.1:8000';
+    if (val.endsWith('/')) val = val.slice(0, -1);
+
+    apiBase = val;
+    localStorage.setItem(STORAGE_API_KEY, apiBase);
+    updateApiHostLabel();
+    testApiConnection();
+    closeSettingsModal();
+    showToast('Configurações salvas');
+  };
+
+  // Helper Utilities
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function formatTime(isoStr) {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  window.copyRawText = function(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Texto copiado para a área de transferência');
+    }).catch(() => {
+      showToast('Erro ao copiar');
+    });
+  };
+
+  window.copyCode = function(btn, codeId) {
+    const codeEl = document.getElementById(codeId);
+    if (!codeEl) return;
+    navigator.clipboard.writeText(codeEl.innerText).then(() => {
+      const orig = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Copiado!`;
+      if (window.lucide) lucide.createIcons();
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        if (window.lucide) lucide.createIcons();
+      }, 2000);
+      showToast('Código copiado!');
+    });
+  };
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMessage');
+    toastMsg.textContent = msg;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+    }, 2800);
+  }
+
+  // Markdown Formatter
+  let codeBlockCounter = 0;
+  function renderMarkdown(md) {
+    if (!md) return '';
+    let out = escapeHtml(md);
+
+    // Fenced Code Blocks ```lang ... ```
+    out = out.replace(/```([a-zA-Z0-9_\-\+]*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+      const id = 'code_block_' + (++codeBlockCounter);
+      const language = lang.trim() || 'código';
+      return `
+        <div class="my-3 rounded-xl overflow-hidden border border-white/10 bg-[#09090b]">
+          <div class="code-block-header">
+            <span>${language}</span>
+            <button class="code-copy-btn" onclick="copyCode(this, '${id}')">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+            </button>
+          </div>
+          <pre><code id="${id}">${code.trim()}</code></pre>
+        </div>
+      `;
+    });
+
+    // Inline code `code`
+    out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Headers
+    out = out.replace(/^### (.*$)/gim, '<h3 class="text-base font-semibold text-white mt-3 mb-1">$1</h3>');
+    out = out.replace(/^## (.*$)/gim, '<h2 class="text-lg font-semibold text-white mt-4 mb-2">$1</h2>');
+    out = out.replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold text-white mt-4 mb-2">$1</h1>');
+
+    // Bold and Italic
+    out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // Blockquotes
+    out = out.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+    // Unordered lists (- or *)
+    out = out.replace(/^\s*[-*]\s+(.*$)/gim, '<li>$1</li>');
+    out = out.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>');
+
+    // Paragraph breaks
+    out = out.split('\n\n').map(p => {
+      p = p.trim();
+      if (!p) return '';
+      if (p.startsWith('<div') || p.startsWith('<h') || p.startsWith('<ul') || p.startsWith('<ol') || p.startsWith('<block')) {
+        return p;
+      }
+      return `<p>${p.replace(/\n/g, '<br/>')}</p>`;
+    }).join('');
+
+    return out;
+  }
+
+})();
+</script>
+
+</body>
+</html>
