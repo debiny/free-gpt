@@ -17,7 +17,7 @@ from auth import (
     token_from_authorization,
     verify_password,
 )
-from config import MODEL, OPENROUTER_API_KEY
+from config import ALLOWED_ORIGINS, MODEL, OPENROUTER_API_KEY
 from models import User, create_tables, get_engine, get_session_factory
 
 app = FastAPI(
@@ -26,10 +26,10 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# Habilita CORS para permitir requisições de qualquer cliente frontend
+# Habilita CORS restrito às origens conhecidas (dev local + URL de produção)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
